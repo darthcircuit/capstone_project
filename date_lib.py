@@ -18,15 +18,3 @@ class date_time:
                 else:
                     print('That format was incorrect. Please Try again.')
     
-    def age_calc(birthday):
-
-        if birthday:
-            birthday = date.fromisoformat(str(birthday))
-        else:
-            return None
-            
-        delta = int(((f'{today - birthday}').split(' '))[0])
-        age = delta//365
-        return age
-
-
