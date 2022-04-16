@@ -1,4 +1,4 @@
-from database import cursor, db_con
+from database import db_cur, db_con
 import bcrypt
 
 
@@ -8,7 +8,7 @@ def create_schema():
         queries = schema.readlines()
     
     for query in queries:
-        cursor.execute(query)
+        db_cur.execute(query)
 
     db_con.commit()
 
@@ -24,7 +24,7 @@ def add_comps():
     for comp in read_comps:
         comp_list = comp.split(',')
         query = ('INSERT INTO Competencies (name, date_created) VALUES (?,?)')
-        cursor.execute(query, comp_list)
+        db_cur.execute(query, comp_list)
         
     db_con.commit()
 
@@ -47,7 +47,7 @@ def add_users():
         user_list[3] = hashed.decode()
         
         query = ("INSERT INTO Users (first_name,last_name,email,password,last_login,failed_logins,date_created,date_hired,passed_comps,user_type,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)")   
-        cursor.execute(query, user_list)
+        db_cur.execute(query, user_list)
     
     db_con.commit()
 add_users()
@@ -78,7 +78,7 @@ def add_assesments():
             #parameters for inserting into db
             assess_db = [assess_id,comp_id,assess_name,counter]
             query = "INSERT INTO Assessments (assess_id, comp_id, name, assess_type) VALUES (?,?,?,?)"
-            cursor.execute(query,assess_db)
+            db_cur.execute(query,assess_db)
 
             counter += 1
     

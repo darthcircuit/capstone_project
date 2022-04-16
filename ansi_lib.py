@@ -186,8 +186,8 @@ def clear():
    print_code('2J')
 
 
-set_font(fg.blue, bg.white, text.bold)
+# set_font(fg.blue, bg.white, text.bold)
 
-print("Hello World")
+# print("Hello World")
 
-reset()
+# reset()

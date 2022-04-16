@@ -1,9 +1,10 @@
 from datetime import date, timedelta
 import re
 
-today = date.today()
 
-class date_time:
+class dt:
+    
+    today = date.today()
     
     def get_date():
             while True:
@@ -11,6 +12,7 @@ class date_time:
                 date_input = input('Type in the date (or leave blank if unknown) using this format: YYYY-MM-DD\n')
                     
                 if re.match('^[0-9]{4}-[0-9]{2}-[0-9]{2}$', date_input):
+                    print()
                     return date_input
                 
                 elif not date_input:
