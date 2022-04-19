@@ -66,8 +66,8 @@ def to_sql(sql_dict):
 
    #UPDATE
    elif query_type == 'update':
-      value = sql_dict['fields'].values()
       field = sql_dict['field']
+      
       query = f'UPDATE {table} SET {field}={value} {where}'
 
    return query, values

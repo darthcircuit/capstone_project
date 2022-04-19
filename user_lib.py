@@ -1,4 +1,5 @@
 from curses import color_content
+from select import select
 import pwinput
 import secrets
 import random
@@ -203,8 +204,57 @@ class User:
 
         print('\n')
     
-    def edit(self):
-        pass
+    def edit(self,selected_user = False):
+
+        manager_edit_options = ['first_name', 'last_name', 'email', 'password', 'date_hired', 'user_type', 'status']
+
+        if not selected_user:
+            selected_user = self
+
+        if self.user_type == 1:
+            options_dict = {}
+            print('Please select one of the following options, or press enter to cancel: ')
+            for num, option in enumerate(manager_edit_options, start=1):
+                print(f'{num}) {option}: ')
+                options_dict[str(num)] = option
+
+            while True:
+
+                choice = input()
+
+                if not choice:
+                    return None
+
+                elif choice in options_dict:
+                    break
+
+                else:
+                    print("That is not a valid option. Please pick another, or press enter to cancel.")
+
+            new_value = input(f'Please enter a new value for {options_dict[choice]}: ')
+
+        else:
+            print('If you would like to change your password, please enter your new one below.')
+            choice = 'password'
+            new_value = input('Password: ')
+            options_dict[choice] = new_value
+    
+        query_dict = {
+
+            'query_type': 'update',
+            'field': f'{options_dict[choice]}',
+            'where': {
+
+                'field': 'user_id',
+                'value': f'{selected_user.user_id}',
+                'operator': 'equalto'
+            }
+
+        }
+        query = to_sql(query_dict)
+        print(query)
+        db_cur(query)
+        db_con.commit()
 
     def delete(email):
         user_to_del = User.select(email)

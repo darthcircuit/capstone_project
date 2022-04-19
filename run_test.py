@@ -5,7 +5,12 @@ from date_lib import dt
 
 # print(my_user.user_id)
 
+active_user = User.select()
 
 selected_user = User.select()
 
+print (active_user.first_name)
 
+print(selected_user.first_name)
+
+User.edit(active_user, selected_user)

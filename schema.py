@@ -31,25 +31,44 @@ def add_comps():
 add_comps()
 
 def add_users():
-    with open('./schema/schema_users.csv') as users:
+    with open('./schema/schema_users.csv', encoding='utf-8-sig') as users:
         read_users = users.readlines()
         
         #remove header row:
-        read_users.pop(0)
+        header = read_users.pop(0)
+        header = header.strip().split(',')
+
 
     salt = bcrypt.gensalt()
+
+
     
-    for user in read_users:
-        user_list = (user.strip()).split(',')
-        
-        #convert plaintext password to hash
-        hashed = bcrypt.hashpw(user_list[3].encode('utf'), salt)
-        user_list[3] = hashed.decode()
-        
-        query = ("INSERT INTO Users (first_name,last_name,email,password,last_login,failed_logins,date_created,date_hired,passed_comps,user_type,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)")   
-        db_cur.execute(query, user_list)
-    
-    db_con.commit()
+    for row in read_users:
+        row = row.strip().split(',')
+        user_dict = dict(zip(header,row))
+
+        new_header = []
+        row_list = []
+        var_list = []
+
+        for key,value in user_dict.items():
+            if value:
+                if key == 'password':
+                    #convert plaintext password to hash
+                    hashed = bcrypt.hashpw(value.encode('utf'), salt)
+                    value = hashed.decode()
+
+                new_header.append(key)           
+                row_list.append(value)
+                var_list.append('?')
+
+        new_header = f'({",".join(new_header)})'
+        var_list =f'({",".join(var_list)})'
+
+        query = (f"INSERT INTO Users {new_header} VALUES {var_list}")   
+        db_cur.execute(query, row_list)
+        db_con.commit()
+
 add_users()
 
 def add_assesments():
