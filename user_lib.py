@@ -1,4 +1,4 @@
-from select import select
+from curses import color_content
 import pwinput
 import secrets
 import random
@@ -6,6 +6,7 @@ import bcrypt
 from date_lib import dt
 from ansi_lib import *
 from database import db_con, db_cur
+from query_dict import to_sql
 
 class User:
 
@@ -22,49 +23,61 @@ class User:
 
     def create():
         user_dict = {}
+        query_dict = {}
         clear()
+
         print('Please enter the following info:')
         print('--------------------------------')
 
+        while True:
+            for info in User.attr_fields:
+                if info == 'first_name':
+                    user_dict[info] = input(f'First Name: ')
+                    print()
+                
+                elif info == 'last_name':
+                    user_dict[info] = input(f'Last Name: ')
+                    print('')
 
-        for info in User.attr_fields:
-            if info == 'first_name':
-                user_dict[info] = input(f'First Name: ')
-                print()
-            
-            elif info == 'last_name':
-                user_dict[info] = input(f'Last Name: ')
-                print('')
+                elif info == 'user_type':
+                    admin = input('If this user is going to be a manager, enter 1. Otherwise press enter. ')
+                    if admin == '1':
+                        user_dict[info] = 1
+                    else:
+                        user_dict[info] = 0
+                
+                elif info == 'date_created':
+                    user_dict[info] = f'{dt.today}'
 
-            elif info == 'user_type':
-                admin = input('If this user is going to be a manager, enter 1. Otherwise press enter. ')
-                if admin == '1':
-                    user_dict[info] = 1
-                else:
-                    user_dict[info] = 0
-            
-            elif info == 'date_created':
-                user_dict[info] = f'{dt.today}'
+                elif info == 'date_hired':
+                    print('Date Hired: \n')
+                    user_dict[info] = dt.get_date()
 
-            elif info == 'date_hired':
-                print('Date Created: ')
-                user_dict[info] = dt.get_date()
-
-            elif info == 'email':
+                elif info == 'email':
                     user_dict['email'] = f"{user_dict['first_name']}.{user_dict['last_name'][0:1]}@infoxen.com".lower()
                     
                     #Add some logic later to check if unique. if not unique, we'll let the user set a username, but automatically append @infoxen.com
 
-            elif info == 'password':
-                #this will generate a random secure password and then encrypt it.
-                salt = bcrypt.gensalt()
-                passwd = secrets.token_urlsafe(10).encode("utf-8")
-                hashed = bcrypt.hashpw(passwd, salt)
-                user_dict[info] = hashed.decode('utf-8')
+                elif info == 'password':
+                    #this will generate a random secure password and then encrypt it.
+                    salt = bcrypt.gensalt()
+                    passwd = secrets.token_urlsafe(10).encode("utf-8")
+                    hashed = bcrypt.hashpw(passwd, salt)
+                    user_dict[info] = hashed.decode('utf-8')
 
-            else:    
-                pass
-        
+                else:    
+                    pass
+            confirm = input('\n\nIf the above info looks correct, please press enter. Press E to try entering the information again. Press any other key to cancel.')
+
+            if not confirm:
+                break
+            
+            elif confirm.lower() == 'e':
+                continue
+            
+            else:
+                return None
+            
         clear()
         print(f"This user's email address is:\n")
         
@@ -72,23 +85,30 @@ class User:
         print(f"{user_dict['email']}")
         reset()
         
-        print(f"\n\nPassword has been set to:\n")
+        print(f"\nPassword has been set to:\n")
         
         set_font(text.bold, fg.white, text.underline)
         print(f"{passwd.decode()}")
         reset()
         
-        print(f'\nPlease share this information with the user. They will need it to login.\nThey will be able to change their password later.')
-        
-        created_attrs = [user_dict['first_name'],user_dict['last_name'],user_dict['email'],user_dict['password'],user_dict['date_created'],user_dict['date_hired'],user_dict['user_type']]
+        print(f'\nPlease share this information with the user. They will need it to login.\nThey will be able to change their password later.\n\n')
 
-        db_cur.execute('INSERT INTO Users (first_name,last_name,email,password,date_created,date_hired,user_type) VALUES (?,?,?,?,?,?,?)', created_attrs)
+        query_dict['query_type'] = 'write'
+        query_dict['table'] = 'Users'
+        query_dict['fields'] = user_dict
+
+        query, parameters = to_sql(query_dict)
+        db_cur.execute(query, parameters)
         db_con.commit()
-        
         
         return User.select(user_dict['email'])
 
-    def select(email_address,to_print = False):
+    def select(email_address = '',to_print = False):
+
+        if not email_address:
+            email_address = User.view('search', 'select')
+            to_print = True
+
         output_obj = db_cur.execute('SELECT * FROM Users WHERE email = ?', (email_address,))
         results = output_obj.fetchall()
 
@@ -105,12 +125,86 @@ class User:
             for key,value in row_as_dict.items():
                 print(f'{key + "":<15}{value}')
 
+            print('\n\n')
+
         return User(row_as_dict)
 
+    def view(*params):
+        query_dict = {
+            'query_type': 'read',
+            'fields': [
+                'first_name', 
+                'last_name', 
+                'email',
+                'last_login',
+                'failed_logins',
+                'date_hired',
+                'user_type',
+                'status',
+                'user_id'
+            ],
+            'table': 'Users',
+
+            'order_by': {
+                'field': 'last_name',
+                'order': ''
+            },
+        }
+
+        if 'search' in params:
+            search_term = input('Please Type a search term: ')
+
+            query_dict['where'] = {'OR':''}
+            query_dict['where']['OR'] = [
+                {
+                    'field': 'first_name',
+                    'value': f"'%{search_term}%'",
+                    'operator': 'LIKE'
+                },
+                {
+                    'field': 'last_name',
+                    'value': f"'%{search_term}%'",
+                    'operator': 'LIKE'
+                }
+
+            ]
+
+        email_dict = {}
+        query = to_sql(query_dict)
+        output_obj = db_cur.execute(query)
+        results = output_obj.fetchall()
+
+        set_font(text.bold, fg.white, text.underline)
+        print(f"\n{' ':5}| {'Name':<24}| {'Email Address':<24}| {'Last Login':<14}| {'Failed Logins':<14}| {'Date Hired':<14}| {'User Type':<12}| {'Status':<10}| {'User ID':<10}")
+        reset()
+        
+        bit_flip = 1
+
+        for num, user in enumerate(results, start=1):
+            if bit_flip == 0:
+                color = set_font(bg.cyan)
+                bit_flip = 1
+            else:
+                color = set_font(bg.blue)
+                bit_flip = 0
+
+            email_dict[str(num)] = user[2]            
+            user = [str(x) for x in user]
+
+            color 
+            print(f"{num:5}| {(user[1]+', '+user[0]):<24}| {user[2]:<24}| {'Never' if not user[3] else user[3]:>14}| {'0' if not user[4] else user[4]:>14}| {user[5]:>14}| {'Manager' if user[6] == '1' else 'Employee':<12}| {'Active' if user[7] == '1' else 'Inactive':<10}| {user[8]:>10}",end="")
+            reset()
+            print()
+
+        if  'select' in params:
+            user_input = input("\nWhich user are you interested in? ")
+            print ('\n\n')
+            return email_dict[user_input]
+
+        print('\n')
+    
     def edit(self):
         pass
 
     def delete(email):
         user_to_del = User.select(email)
-
-        
