@@ -1,1 +1,0 @@
-{'first_name': 'Joe', 'last_name': 'Ipson', 'email': 'joe.i@infoxen.com', 'password': '$2b$12$y0Uy59aZnrfWp3M5oTYhfe73tFHdKhUzAsWF0fire9wAyNaZ8gON.', 'date_created': '2022-04-20', 'date_hired': '2022-04-04', 'user_type': 1}
