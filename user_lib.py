@@ -102,6 +102,9 @@ class User:
         db_cur.execute(query, parameters)
         db_con.commit()
         
+        with open('dict_writer.txt', 'w') as dict_write:
+            dict_write.write(f'{user_dict}')
+
         return User.select(user_dict['email'])
 
     def select(email_address = '',to_print = False):
@@ -170,8 +173,33 @@ class User:
 
             ]
 
+
+        if 'manager' in params:
+            query_dict = {
+            'query_type': 'read',
+            'fields': [
+                'first_name', 
+                'last_name', 
+                'email',
+                'user_type',
+                'user_id'
+                ],
+
+            'table': 'Users',
+
+            'where':{
+                'user_type':1
+                },
+
+            'order_by': {
+                'field': 'last_name',
+                'order': ''
+                }
+            }
+
         email_dict = {}
         query = to_sql(query_dict)
+
         output_obj = db_cur.execute(query)
         results = output_obj.fetchall()
 
@@ -231,18 +259,25 @@ class User:
                 else:
                     print("That is not a valid option. Please pick another, or press enter to cancel.")
 
-            new_value = input(f'Please enter a new value for {options_dict[choice]}: ')
+            choice = options_dict[choice]
+            new_value = input(f'Please enter a new value for {choice}: ')
+
 
         else:
             print('If you would like to change your password, please enter your new one below.')
             choice = 'password'
             new_value = input('Password: ')
             options_dict[choice] = new_value
+
+        if choice == 'password':
+            hashed = bcrypt.hashpw(new_value.encode(),salt=bcrypt.gensalt())
+            new_value = hashed.decode()
     
         query_dict = {
 
             'query_type': 'update',
-            'field': f'{options_dict[choice]}',
+            'table': 'Users',
+            'field': f'{choice}',
             'where': {
 
                 'field': 'user_id',
@@ -252,9 +287,8 @@ class User:
 
         }
         query = to_sql(query_dict)
-        print(query)
-        db_cur(query)
+        db_cur.execute(query,(new_value,))
         db_con.commit()
 
-    def delete(email):
-        user_to_del = User.select(email)
+
+

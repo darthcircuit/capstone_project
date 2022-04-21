@@ -1,4 +1,4 @@
-and_or_list = ['AND', 'OR', 'NOT']
+# and_or_list = ['AND', 'OR', 'NOT']
 operator_dict = {'equalto':'=','lessthan':'<','greaterthan':'>','lessthanorequalto':'<=','greaterthanorequalto':'>=','notequalto':'!=', 'LIKE':'LIKE'}
 
 def to_sql(sql_dict):
@@ -11,23 +11,25 @@ def to_sql(sql_dict):
    if 'where' in sql_dict:
       where = 'WHERE'
 
-      for i in sql_dict['where']:
-         if i in and_or_list:
-               count = 1
-               for dict in sql_dict['where'][i]:
-                  
-                  field = dict['field']
-                  value = dict['value']
-                  operator = dict['operator']
+      
+      
+      if "AND" in sql_dict['where'] or "OR" in sql_dict['where'] or "NOT" in sql_dict['where']:
+         count = 1
+         for i in sql_dict['where']:
+            for dict in sql_dict['where'][i]:
                
-                  where = where + f' {field} {operator_dict[operator]} {value}{" " + i if count < len(sql_dict["where"][i]) else ""}'
-                  count += 1
-         else:
-               field = i['field']
-               value = i['value']
-               operator = i['operator']
+               field = dict['field']
+               value = dict['value']
+               operator = dict['operator']
+            
+               where = where + f' {field} {operator_dict[operator]} {value}{" " + i if count < len(sql_dict["where"][i]) else ""}'
+               count += 1
+      else:
+         field = sql_dict['where']['field']
+         value = sql_dict['where']['value']
+         operator = sql_dict['where']['operator']
 
-               where = where + f'{field} {operator_dict[operator]} {value}'
+         where = where + f' {field} {operator_dict[operator]} {value}'
 
    #READ
    if query_type == 'read':
@@ -63,11 +65,13 @@ def to_sql(sql_dict):
       # values = ', '.join(values)
 
       query = f'INSERT INTO {table} ({columns}) VALUES ({val_var})'
+      return query, values
 
    #UPDATE
    elif query_type == 'update':
       field = sql_dict['field']
-      
-      query = f'UPDATE {table} SET {field}={value} {where}'
 
-   return query, values
+
+      query = f'UPDATE {table} SET {field} = ? {where} '
+
+   return query

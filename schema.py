@@ -22,7 +22,7 @@ def add_comps():
     read_comps.pop(0)
 
     for comp in read_comps:
-        comp_list = comp.split(',')
+        comp_list = comp.strip().split(',')
         query = ('INSERT INTO Competencies (name, date_created) VALUES (?,?)')
         db_cur.execute(query, comp_list)
         

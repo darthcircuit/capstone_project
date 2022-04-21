@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "comp_tracker",
+            "database": "./database/comp_tracker.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}
