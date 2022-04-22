@@ -6,6 +6,10 @@ import re
 from database import *
 import os
 from sys import stdout, stdin
+import sqlite3
+
+db_con = sqlite3.connect('./database/comp_tracker.db')
+db_cur=db_con.cursor()
 
 #creates user object, allows add/edit/view of db table Users
 class User:
@@ -22,6 +26,7 @@ class User:
         self.attributes = [self.user_id,self.first_name,self.last_name,self.email,self.password,self.last_login,int(self.failed_logins),self.date_created,self.date_hired,self.passed_comps,int(self.user_type),int(self.status)]
 
     def create():
+        reset()
         user_dict = {}
         query_dict = {}
         clear()
@@ -108,7 +113,7 @@ class User:
         return User.select(user_dict['email'])
 
     def select(email_address = '',to_print = False):
-
+        reset()
         if not email_address:
             email_address = User.view('search', 'select')
             to_print = True
@@ -134,6 +139,7 @@ class User:
         return User(row_as_dict)
 
     def view(*params):
+        reset()
         attr = ['User Choice', 'First Name', 'Last Name', 'Email Address', 'Last Login,', 'Failed Logins', 'Date Hired', 'User Type', 'Status', 'User ID']
         query_dict = {
             'query_type': 'read',
@@ -157,7 +163,7 @@ class User:
         }
 
         if 'search' in params:
-            search_term = input('Please Type a search term: ')
+            search_term = input('\n\nPlease Type a User\'s name to search, or leave blank to view all users: ')
 
             query_dict['where'] = {'OR':''}
             query_dict['where']['OR'] = [
@@ -210,9 +216,13 @@ class User:
 
         email_dict = {}
         query = to_sql(query_dict)
-        print(query)
+
         output_obj = db_cur.execute(query)
         results = output_obj.fetchall()
+
+        if not results:
+            print('There is no results by that name.')
+            return None
 
         result_dict = {}
         result_list = []
@@ -230,9 +240,8 @@ class User:
             
             result_list.append(result_dict.copy())
         
-        table_writer(result_list, attr, 2)
+        table_writer(result_list, attr, 1)
                 
-
         if  'select' in params:
             user_input = input("\nWhich user are you interested in? ")
             print ('\n\n')
@@ -260,12 +269,10 @@ class User:
         #     reset()
         #     print()
 
-
-
         print('\n')
     
     def edit(self,selected_user = False):
-
+        reset()
         manager_edit_options = ['first_name', 'last_name', 'email', 'password', 'date_hired', 'user_type', 'status']
 
         if not selected_user:
@@ -322,9 +329,19 @@ class User:
         db_cur.execute(query,(new_value,))
         db_con.commit()
 
+    def chpw(self,new_pass):
+        
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(new_pass.encode(),salt)
+
+
+        db_cur.execute('UPDATE Users SET password = ? WHERE email = ?', (hashed.decode(), self.email))
+        db_con.commit()
+        print(f'Password has been updated. New Password hash is {hashed}')
+
 #creates competencies object, allows add/edit/view of db table Competencies
 class Competencies:
-
+    
     attr_fields = ['comp_id','name','date_created']
 
     def __init__(self, comp_id,name,date_created):
@@ -334,7 +351,7 @@ class Competencies:
         self.date_created = date_created
 
     def create():
-
+        reset()
         name = input('Please enter a name for this competency: ')
         date_created = f'{dt.today}'
         
@@ -355,6 +372,7 @@ class Competencies:
         return new_comp
 
     def view(select=False):
+        reset()
         clear()
         query = ("SELECT comp_id, name, date_created FROM Competencies")
 
@@ -382,7 +400,7 @@ class Competencies:
 
 
         while True:
-            edit_sel = input('Enter the Competency ID that you would like to edit: ')
+            edit_sel = int(input('Enter the Competency ID that you would like to edit: '))
             if edit_sel in choices_list:
                 break
             else:
@@ -492,8 +510,8 @@ class Results:
         print("Please select Which user this attempt is for: ")
         user = User.select()
 
-        print('Please select an assesment: ')
         assess = Assess.view(True)
+        assess_choice = input('Please select an assesment: ')
 
         print("Who manages this employee?")
         manager = User.view('manager','select')
@@ -503,20 +521,36 @@ class Results:
         #for a second attempt for assessment 14.2 for user 12, the result_d == 14.2.12.2
         result_dict['result_id'] = f'{assess.assess_id}.{user.user_id}.{"Insert attempt # here"}'
 
-    def view_all_results():
-        query = 'SELECT * FROM Assessment_Results'
+    def view_all_results(select = False):
+        clear()
+        query = '''
+                SELECT u.last_name,u.first_name, a.name, r.result_id, r.score 
+                FROM Assessment_Results r 
+                JOIN  Users u ON r.user_id = u.user_id 
+                JOIN Assessments a ON a.assess_id = r.assess_id
+                
+                '''
 
         results = db_cur.execute(query).fetchall()
-
+        head = ['Choice', 'Last Name','First Name', 'Assessment Name', 'Result ID', 'Attempt Score']
         result_dict = {}
         result_list = []
+        choices_list = []
+        counter = 1 
+
         for result in results:
+            result = list(result)
+            result.insert(0,counter)
             for n,col in enumerate(result):
-                result_dict[Results.result_attr[col]] = result[n]
-            
-            result_list.append(result_dict)
+                result_dict[head[n]] = col
+                choices_list.append(result[0])
+            result_list.append(result_dict.copy())
+            counter+=1
         
-        table_writer(result_list)
+        table_writer(result_list, head, 3)
+
+        if select:
+            return choices_list
 
 
     def view(self):
@@ -527,6 +561,27 @@ class Results:
 
     def edit(self):
         pass
+
+class Reports:
+    def gen_template():
+        print(':Generating Templates for use with importing Employee Assesment Results:')
+
+        template_header = 'user_id,assess_id,score,date_taken'
+        with open('./reports/add_results_tmplt.csv', 'w') as template:
+            template.write(template_header)
+
+        print('\n\nTemplate Successfully written. Please check the Reports folder.\n\n')
+        input('Please press Enter when ready to continue.')
+
+    def import_csv():
+        pass
+
+    def export_csv():
+        pass
+
+    def export_pdf():
+        pass
+
 
 operator_dict = {'equalto':'=','lessthan':'<','greaterthan':'>','lessthanorequalto':'<=','greaterthanorequalto':'>=','notequalto':'!=', 'LIKE':'LIKE'}
 
@@ -662,6 +717,8 @@ def is_even(number):
     elif number == 0: return True
     return False
 
+# #automagically generates table for db queries created from a list of dictionaries
+
 def table_writer(dictionary_list,desired_header,color_scheme = 0, custom_data = False):
     color_schemes = {
         0: [bg.blue,bg.cyan],
@@ -725,10 +782,7 @@ def table_writer(dictionary_list,desired_header,color_scheme = 0, custom_data = 
         row_num += 1
 
     print()
-    #print table
 
-
-# #automagically generates table for db queries created from a list of dictionaries
 
 '''
 ansi_lib.py is a collection of classes and functions that implement many

@@ -31,7 +31,7 @@
     
 //     "stopOnEntry": true,
     
-//     "pythonPath": "/home/johnipson/.local/share/virtualenvs/capstone_project-yUPdvJkb/bin/python",
+//     "python": "/home/johnipson/.local/share/virtualenvs/capstone_project-yUPdvJkb/bin/python",
     
 //     "program": "${file}",
     

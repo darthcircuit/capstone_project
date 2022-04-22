@@ -1,173 +1,256 @@
+from shutil import move
+import pwinput
+import bcrypt
 from libs import *
+from database import *
+from reports import *
 
-def new_writer(dictionary_list,desired_header,color_scheme = 0, custom_data = False):
-    color_schemes = {
-        0: [bg.blue,bg.cyan],
-        1: [bg.blue,bg.white],
-        2: [bg.blue,bg.magenta],
-        3: [bg.green,bg.blue],
-        4: [bg.green,bg.white],
-        5: [bg.magenta,bg.white],
-        6: [bg.cyan,bg.green],
-        7: [bg.cyan,bg.magenta],
-        8: [bg.cyan,bg.white],
-        9: [bg.green,bg.magenta]
-    }
+def login():
 
-    col_width = []
+        clear()
 
-    for header in desired_header:
-        col_width.append(len(header))
-
-    rows = []
-    #import a list of dictionaries and unpack
-    for data_dict in dictionary_list:
-
-        #find column width and append data to row
-        row = []
-        for num,val in enumerate(list(data_dict.values())):
-
-            current_width = len(str(val))
-            row.append(val)
-            if current_width > col_width[num]:
-                col_width[num] = current_width
-        rows.append(row)
+        print('Welcome Stranger! Please Log in!')
+        
+        while True:
+            email = input('Please type in your Email Address (or leave blank to quit): ')
             
-    #print the table
+            if not email:
+                print('Goodbye!')
+                quit()
 
-    #header
-    for col,data in enumerate(dictionary_list):
-        width = col_width[col]
-        set_font(text.bold,text.underline)
-        print(f' {desired_header[col]:<{width}}|',end="")
-        reset()
-
-    print()
-
-    row_num = 1
-    for row in rows:
-        if is_even(row_num):
-            color = set_font(color_schemes[color_scheme][0])
-        else:
-            color = set_font(color_schemes[color_scheme][1])
-
-        col_num = 0
-        while col_num < len(desired_header):
-            color
-            width = col_width[col_num]
-            print(f" {row[col_num]:<{width}}|",end='')
-            col_num += 1
-        
-        reset()
-        print()
-        row_num += 1
-
-    print()
-    #print table
-
-
-def table_writer(dataset_list,column_names_dict = False, color_scheme = 0):
-
-    color_schemes = {
-        0: [bg.blue,bg.cyan],
-        1: [bg.blue,bg.white],
-        2: [bg.blue,bg.magenta],
-        3: [bg.green,bg.blue],
-        4: [bg.green,bg.white],
-        5: [bg.magenta,bg.white],
-        6: [bg.cyan,bg.green],
-        7: [bg.cyan,bg.magenta],
-        8: [bg.cyan,bg.white],
-        9: [bg.green,bg.magenta]
-    }
-
-    col_width_dict = {}
-
-    rows = []
-    #import a list of dictionaries and unpack
-    for data_dict in dataset_list:
-
-        #find column width
-        header = list(data_dict.keys())
-        row = []
-        for col,val in data_dict.items():
-        
-            try:
-                col_width_dict[col] = max(len(col), len(str(val)), col_width_dict[col])
-
-            except:
-                col_width_dict[col] = max(len(col), len(str(val)))
-
-            row.append(val)
-
-        #prepare data for print
-        rows.append(row)
-
-    num_rows = len(rows)
-    print('\n' * (num_rows),flush=True)
-
-    move_cursor(num_rows,'u')    
-
-    #print first column's header first
-    for col_num, col_name in enumerate(header):
-        row_num = 0
-
-        #set column width:
-        width = col_width_dict[col_name]+2
-        
-        #set header style, and print column name
-        set_font(text.bold, text.underline, bg.black)
-        print(f'{col_name:<{width}} |', end = '',flush=True)
-
-        reset()
-
-        #print one column at a time until all data is done
-        while row_num < num_rows:
-            row = rows[row_num]
-            if is_even(row_num):
-                color = set_font(color_schemes[color_scheme][0])
-            else:
-                color = set_font(color_schemes[color_scheme][1])
-            row_num += 1
+            passwd = pwinput.pwinput(prompt = 'Please Type in your password: ', mask = '*')
             
-            move_cursor(1,'d')
-            move_cursor(width+2,'l')
+            hashed_pass = db_cur.execute("SELECT password FROM Users WHERE email = ?", (email,)).fetchone()
             
-            color
-            print(f'{row[col_num]:<{width}} |', end = '',flush=True)
-            reset()
+            if not hashed_pass:
+                print("Incorrect. Please try again.")
+                continue
+            
+            hashed_pass = hashed_pass[0]
 
-        move_cursor(row_num, 'u')
+            if bcrypt.checkpw(passwd.encode('utf-8'), hashed_pass.encode('utf-8')):
 
-    if col_num == len(header)-1:
-        print('\n' * (num_rows+2),flush=True)
-
-    def new_writer(dictionary_list,desired_header,custom_data = False):
-
-        col_width_dict = {}
-        col_width_list = []
-
-        for header in desired_header:
-            col_width_list.append(len(header))
-
-        
-        #import a list of dictionaries and unpack
-        for data_dict in dictionary_list:
-
-            #find column width
-            for num,col,val in enumerate(data_dict.items()):
-
-                current_width = max(col,val)
-
-                if current_width > len(col_width_list[num]):
-                    col_width_list[num] = current_width
+                User.active_user = User.select(email)
+                print('login works!')
+                print(f'Welcome {User.active_user.first_name}!')
                 
-        #print header
-        for i,header in enumerate(desired_header):
-            print(f' {header:<{col_width_list[i]}}|')
+                #start main program as user:
+                main_menu(User.active_user)
 
-        #print table
+                print('You have been logged out.')
+                continue
 
-        for i,data in enumerate(dictionary_list):
-            print(f' {data:<{col_width_list[i]}}|')
+            else:
+                db_cur.execute(f'UPDATE Users SET failed_logins = (failed_logins + 1) WHERE email = ?', (email,))
+                db_con.commit()
+                print("Incorrect. Please try again.")
 
+def main_menu(logged_user):
+    user_name = f'{logged_user.first_name} {logged_user.last_name}'
+    last_logged = logged_user.last_login
+    failed = logged_user.failed_logins
+    manager = logged_user.user_type
+
+    #reset password counter and update login time
+    db_cur.execute(f'UPDATE Users SET last_login = ?, failed_logins = 0 WHERE email = ?', (dt.today, logged_user.email))
+    db_con.commit()
+    clear()
+
+    
+    print(f'Welcome back {user_name}!')
+    print(f'You last logged in on {last_logged}')
+    
+    if int(failed) > 0:
+        move_cursor(25,'r')
+        print(f'\n\n!!WARNING!!\n')
+        
+        move_cursor(25,'r')
+        print('- There were {failed} failed login attempts to your account since your last successful Login!\n\n')
+
+    while True:    
+        user_menu = ['Change your password', 'View your assessment results and passed competencies','Log Out']
+        if int(manager) == 1:
+            print(f'You are logged in with Admin Privelages. Please be careful as you edit data.\n\n')
+
+            manager_menu = ['Change your password', 'Change another User\'s Password', 'View Users, Competencies, Assessments and Assessment Result Reports', 'Add Users or Competencies/Assessments', 'Edit User Information, Competencies, and Assessments', 'Delete an Assessment Result', 'View your assessment results and passed competencies', 'Log Out']
+            table_menu = ['Users', 'Competencies', 'Assessments', 'Results']
+            valid_choices = []
+            for num,option in enumerate(manager_menu, start = 1):
+                move_cursor(6,'r')
+                valid_choices.append(num)
+                print(f'[{num}]: {option}')
+
+            choice = int(input('\n\nPlease select an option: '))
+
+            if choice not in valid_choices:
+                clear()
+                move_cursor(15,'r')
+
+                print('That was not a valid choice. Please try again.\n\n\n\n')
+
+            elif choice == 1:
+
+                clear()
+                move_cursor(15,'r')
+                print(f':Change your password:')
+
+                move_cursor(15,'r')
+                new_pw = pwinput.pwinput(prompt="Please insert your new desired password: ", mask ='*')
+
+                User.chpw(active_user, new_pw)
+
+                move_cursor(15,'r')                
+                input("Logging your out for security purposes. Please log in again with your new password. Press Enter to continue.")
+                return None
+
+            elif choice == 2:
+                clear()
+                move_cursor(15,'r')
+                print(f':Select a User to change the password for someone else:')
+                selected_user = User.select()
+
+                move_cursor(15,'r')
+                new_pw = pwinput.pwinput(prompt=f"Please insert new desired password for {selected_user.first_name}: ", mask ='*')
+
+                User.chpw(selected_user, new_pw)
+
+                move_cursor(15,'r')
+                input('Please press Enter to continue')
+
+            elif choice == 3:
+                clear()
+                print(f':View Users, Competencies, Assessments and Assessment Result Reports:\n\n')
+                valid_sub_choice = [1,2,3,4,5]
+                while True:
+                    
+                    for num,i in enumerate(table_menu, start = 1):
+                        move_cursor(15,'r')
+                        print(f'[{num}]: {i}')
+
+                    move_cursor(15,'r')
+                    print(f'[{num+1}]: Go Back')
+                    
+                    sub_choice = int(input('\n\nPlease Select an option: '))
+                    
+                    if sub_choice in valid_sub_choice:
+                        if sub_choice == 1:
+                            clear()
+                           
+                            User.view()
+
+                        elif sub_choice == 2:
+                            clear()
+                            Competencies.view()
+                        
+                        elif sub_choice == 3:
+                            clear()
+                            Assess.view()
+                        
+                        elif sub_choice == 4:
+                            clear()
+                            Results.view()
+                        
+                        elif sub_choice == 5:
+                            clear()
+                            break
+
+                    else:
+                        clear()
+                        move_cursor(25,'r')
+                        print('Invalid Choice. Try again.')
+           
+            elif choice == 4:
+                clear()
+                print(f':Add Users, Competencies, and Assessments:\n\n')
+
+                print('Assessments are automatically created when a competency is added.\n\n')
+                valid_sub_choice = [1,2,3]
+
+                while True:
+                    move_cursor(15,'r')
+                    print(f'[1]: Add User')
+
+                    move_cursor(15,'r')
+                    print(f'[2]: Add Competency')
+
+                    move_cursor(15,'r')
+                    print(f'[3]: Go Back')
+
+
+                    sub_choice = int(input('\n\nPlease Select an option: '))
+                    
+                    if sub_choice in valid_sub_choice:
+                        if sub_choice == 1:
+                            User.create()
+
+                        elif sub_choice == 2:
+                            Competencies.create()
+                            Competencies.view()
+                            print('\n\n Competency and associated Assessments created successfully.')
+                            input('\nPress Enter to continue.')
+
+                        elif sub_choice == 3:
+                            break
+
+                    else:
+                        clear()
+                        print("Invalid Choice. Please Try again. \n\n")
+
+            elif choice == 5:
+                clear()
+                print(f':Edit User Information, Competencies, and Assessments:')
+
+                print('Assessments are automatically updated when a competency is edited.\n\n')
+                valid_sub_choice = [1,2,3]
+
+                while True:
+                    move_cursor(15,'r')
+                    print(f'[1]: Edit User')
+
+                    move_cursor(15,'r')
+                    print(f'[2]: Edit Competency')
+
+                    move_cursor(15,'r')
+                    print(f'[3]: Go Back')
+
+
+                    sub_choice = int(input('\n\nPlease Select an option: '))
+                    
+                    if sub_choice in valid_sub_choice:
+                        if sub_choice == 1:
+                            selected_user = User.select()
+                            User.edit(active_user, selected_user)
+
+                        elif sub_choice == 2:
+                            Competencies.edit()
+                            Competencies.view()
+                            print('\n\n Competency and associated Assessments updated successfully.')
+                            input('\nPress Enter to continue.')
+
+                        elif sub_choice == 3:
+                            break
+
+                    else:
+                        clear()
+                        print("Invalid Choice. Please Try again. \n\n")
+
+            
+            elif choice == 6:
+                clear()
+                print(f':Delete an Assessment Result:')
+
+            elif choice == 7:
+                clear()
+                print(f':View your Competency Progress:')
+
+            elif choice == 8:
+                clear()
+                print(f'Logging you out. Goodbye {user_name}')
+                return None
+
+        else:
+            for num,option in enumerate(user_menu):
+                print(f'[{num}]: {option}')
+
+active_user = User.select('john.i@infoxen.com')
+main_menu(active_user)
