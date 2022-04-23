@@ -1,4 +1,5 @@
 import secrets
+from unittest import result
 import bcrypt
 from datetime import date, timedelta
 from random import choices
@@ -7,6 +8,7 @@ from database import *
 import os
 from sys import stdout, stdin
 import sqlite3
+import csv
 
 db_con = sqlite3.connect('./database/comp_tracker.db')
 db_cur=db_con.cursor()
@@ -16,14 +18,14 @@ class User:
 
     active_user = ''
     selected_user = ''
-    attr_fields = ['user_id','first_name','last_name','email','password','last_login','failed_logins','date_created','date_hired','passed_comps','user_type','status']
+    attr_fields = ['user_id','first_name','last_name','email','password','last_login','failed_logins','date_created','date_hired','user_type','status']
     
     def __init__(self,attr_dict):
 
         for attr in User.attr_fields:
             setattr(self,attr,attr_dict[attr])
 
-        self.attributes = [self.user_id,self.first_name,self.last_name,self.email,self.password,self.last_login,int(self.failed_logins),self.date_created,self.date_hired,self.passed_comps,int(self.user_type),int(self.status)]
+        self.attributes = [self.user_id,self.first_name,self.last_name,self.email,self.password,self.last_login,int(self.failed_logins),self.date_created,self.date_hired,int(self.user_type),int(self.status)]
 
     def create():
         reset()
@@ -186,9 +188,8 @@ class User:
                 'User Choice',
                 'First Name', 
                 'Last Name', 
-                'Email Address',
-                'User Type',
-                'User ID'
+                'Email Address'
+
                 ]
 
             query_dict = {
@@ -196,9 +197,8 @@ class User:
             'fields': [
                 'first_name', 
                 'last_name', 
-                'email',
-                'user_type',
-                'user_id'
+                'email'
+
                 ],
             'table': 'Users',
 
@@ -246,28 +246,6 @@ class User:
             user_input = input("\nWhich user are you interested in? ")
             print ('\n\n')
             return email_dict[user_input]
-
-        # set_font(text.bold, fg.white, text.underline)
-        # print(f"\n{' ':5}| {'Name':<24}| {'Email Address':<24}| {'Last Login':<14}| {'Failed Logins':<14}| {'Date Hired':<14}| {'User Type':<12}| {'Status':<10}| {'User ID':<10}")
-        # reset()
-        
-        # bit_flip = 1
-
-        # for num, user in enumerate(results, start=1):
-        #     if bit_flip == 0:
-        #         color = set_font(bg.cyan)
-        #         bit_flip = 1
-        #     else:
-        #         color = set_font(bg.blue)
-        #         bit_flip = 0
-
-        #     email_dict[str(num)] = user[2]            
-        #     user = [str(x) for x in user]
-
-        #     color 
-        #     print(f"{num:5}| {(user[1]+', '+user[0]):<24}| {user[2]:<24}| {'Never' if not user[3] else user[3]:>14}| {'0' if not user[4] else user[4]:>14}| {user[5]:>14}| {'Manager' if user[6] == '1' else 'Employee':<12}| {'Active' if user[7] == '1' else 'Inactive':<10}| {user[8]:>10}",end="")
-        #     reset()
-        #     print()
 
         print('\n')
     
@@ -398,7 +376,6 @@ class Competencies:
 
         choices_list = Competencies.view(True)
 
-
         while True:
             edit_sel = int(input('Enter the Competency ID that you would like to edit: '))
             if edit_sel in choices_list:
@@ -406,8 +383,12 @@ class Competencies:
             else:
                 print('Not a valid selection. Please try select a different option.')
 
-        col_name = input('What would you like to name this competency? ')
+        col_name = input('What would you like to name this competency (Or leave blank to cancel)? ')
         
+        if not col_name:
+            print('Cancelling...')
+            return None
+
         print("When was this competency Created?\n")
         col_date = dt.get_date()
 
@@ -467,15 +448,18 @@ class Assess:
             result = list(result)
             result.insert(0,counter)
             for n,col in enumerate(result):
-                result_dict[head[n]] = col
-                choices_list.append(result[0])
-            result_list.append(result_dict.copy())
+                result_dict[head[n]] = col # column name/value
+                choices_list.append(result[0]) #row number
+            result_list.append(result_dict.copy()) #dictionary gets imported into a list. should be callable based on row number.
             counter+=1
         
         table_writer(result_list, head, 4)
 
         if select:
-            return choices_list
+
+            assess_input = int(input("\nWhich Assessment are you interested in? "))
+            print ('\n\n')
+            return result_list[assess_input-1]
 
     def edit(competency):
 
@@ -504,22 +488,96 @@ class Results:
 
         self.attr = [self.result_id, self.assess_id, self.user_id, self.assess_date, self.manager_id, self.score]
 
-    def add_result():
-        result_dict = {}
+    def add_result(user):
+        #as a reminder, assess_id is created based on comp_id and assess_type.
+        #result_id is determined based off of assess_id, user_id, and attempt number
+        #for a second attempt for assessment 14.2 for user 12, the result_d == 14.2.12.2
         
         print("Please select Which user this attempt is for: ")
-        user = User.select()
+        user = user.user_id
 
         assess = Assess.view(True)
-        assess_choice = input('Please select an assesment: ')
+        assess = assess["Assessment ID"]
 
         print("Who manages this employee?")
         manager = User.view('manager','select')
 
-        #as a reminder, assess_id is created based on comp_id and assess_type.
-        #result_id is determined based off of assess_id, user_id, and attempt number
-        #for a second attempt for assessment 14.2 for user 12, the result_d == 14.2.12.2
-        result_dict['result_id'] = f'{assess.assess_id}.{user.user_id}.{"Insert attempt # here"}'
+        score = input('\nWhat was their Score? ')
+
+        print('\nPlease enter the date the assessment was taken.')
+        input_date = dt.get_date()
+
+        result_list = [user,assess,score,input_date,manager]
+
+
+        chk_increment = db_cur.execute('SELECT user_id,assess_id,result_id FROM Assessment_Results').fetchall()
+
+        db_result = f'{assess}.{user}.1'
+
+        print (db_result)
+
+        for db_row in chk_increment:
+            db_user = db_row[0]
+            db_assess = db_row[1]
+
+
+            if str(user) == str(db_user) and str(assess) == str(db_assess):
+
+                db_result = f'{db_assess}.{db_user}.{int(db_result[-1])+1}'
+
+        result_list.append(db_result)
+
+
+        db_cur.execute('INSERT INTO Assessment_Results (user_id, assess_id, score, assess_date, manager_id, result_id) VALUES (?,?,?,?,?,?)',(result_list))
+
+        db_con.commit()
+
+        print('Results uploaded to database successfully')
+
+    def view_user_competency(user, to_csv = False):
+        if not user:
+            user = User.select()
+
+        user = user.user_id
+        query = '''
+            SELECT DISTINCT  c.name as Competency, c.comp_id as 'Competecy ID', (u.last_name ||', '|| u.first_name) as 'Employee Name', u.email as Email, a.assess_id as assess_id, AVG(r.score) as average_score
+            FROM Users u
+            JOIN Assessment_Results r
+            ON u.user_id = r.user_id
+            JOIN Assessments a
+            ON r.assess_id = a.assess_id
+            JOIN Competencies c
+            ON a.comp_id = c.comp_id
+            WHERE
+            u.user_id = ?
+            GROUP BY c.comp_id
+            ORDER BY r.assess_id
+
+        '''
+        result = db_cur.execute(query, (user,))
+        header = [name[0] for name in result.description]
+        rows = result.fetchall()
+
+        result_dict = {}
+        result_list = []
+        for row in rows:
+            row = list(row)
+            for n,col in enumerate(row):
+                result_dict[header[n]] = col
+            
+            result_list.append(result_dict.copy())
+        
+        table_writer(result_list, header, 5)
+
+        if to_csv:
+            filename = f'./reports/User Competency Report - user_id.{user}.{dt.today}.csv'
+            with open(filename, 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(header)
+                writer.writerows(rows)
+
+            clear()
+            print (f'Successfully wrote CSV to: {filename}\n\n\n')
 
     def view_all_results(select = False):
         clear()
@@ -535,12 +593,15 @@ class Results:
         head = ['Choice', 'Last Name','First Name', 'Assessment Name', 'Result ID', 'Attempt Score']
         result_dict = {}
         result_list = []
+        choice_dict = {}
+        choice_dict_list = []
         choices_list = []
         counter = 1 
 
         for result in results:
             result = list(result)
             result.insert(0,counter)
+            choice_dict[counter] = result[4]
             for n,col in enumerate(result):
                 result_dict[head[n]] = col
                 choices_list.append(result[0])
@@ -550,23 +611,104 @@ class Results:
         table_writer(result_list, head, 3)
 
         if select:
-            return choices_list
+            while True:
+                result_sel = int(input('Enter the choice that you would like: '))
+                if result_sel in choices_list:
+
+                    return choice_dict[result_sel]
+                else:
+                    print('Not a valid selection. Please try select a different option.')
+
+    def view_comp(to_csv = False):
+        clear()
+        choices_list = Competencies.view(True)
+
+        while True:
+            comp_sel = int(input('Enter the Competency ID that you would like to view a report of: '))
+            if comp_sel in choices_list:
+                break
+            else:
+                print('Not a valid selection. Please try select a different option.')
+
+        query = '''
+            SELECT DISTINCT  c.name as Competency, c.comp_id as 'Competecy ID', (u.last_name ||', '|| u.first_name) as 'Employee Name', u.email as Email, a.assess_id as assess_id, AVG(r.score) as average_score
+            FROM Users u
+            JOIN Assessment_Results r
+            ON u.user_id = r.user_id
+            JOIN Assessments a
+            ON r.assess_id = a.assess_id
+            JOIN Competencies c
+            ON a.comp_id = c.comp_id
+            WHERE
+            c.comp_id = ?
+            GROUP BY c.comp_id
+            ORDER BY r.assess_id
+        '''
+        result = db_cur.execute(query, (comp_sel,))
+        header = [name[0] for name in result.description]
+        rows = result.fetchall()
+
+        result_dict = {}
+        result_list = []
+        for row in rows:
+            row = list(row)
+            for n,col in enumerate(row):
+                result_dict[header[n]] = col
+            
+            result_list.append(result_dict.copy())
+        
+        table_writer(result_list, header, 3)
+
+        if to_csv:
+            filename = f'./reports/User Competency Report - comp_id.{comp_sel}.{dt.today}.csv'
+            with open(filename, 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(header)
+                writer.writerows(rows)
+            
+            clear()
+            print (f'Successfully wrote CSV to: {filename}\n\n\n')
+
+    def delete():
+        clear()
+        to_del = Results.view_all_results(True)
+        
+        confirm = input('To confirm that you want to delete this entry, enter "yes" without the quotes. ')
+
+        if confirm.lower() != 'yes':
+            print('I could not confirm you wanted to delete this entry. Exiting.')
+            return None
+            
+        else:
+            query = (f"DELETE FROM Assessment_Results WHERE result_id = '{to_del}' ")
+            db_cur.execute(query)
+            db_con.commit()
+            print('Value Deleted\n\n')
 
 
-    def view(self):
-        pass
+    def edit():
+        to_edit = Results.view_all_results(True)
 
-    def delete(self):
-        pass
+        while True:
+            update = int(input("What is the correct score for this Assessment? "))
 
-    def edit(self):
-        pass
+            if update not in [0,1,2,3,4]:
+                print('Scores can only be between 0 and 4. Please Try again.')
+            
+            else:
+                query = ('Update Assessment_Results SET score = ? WHERE result_id = ?')
+                db_cur.execute(query, (update,to_edit))
+                db_con.commit()
+                print('Value Updated\n\n')
+                break
+
 
 class Reports:
     def gen_template():
         print(':Generating Templates for use with importing Employee Assesment Results:')
 
-        template_header = 'user_id,assess_id,score,date_taken'
+        template_header = 'user_id,assess_id,score,assess_date'
+
         with open('./reports/add_results_tmplt.csv', 'w') as template:
             template.write(template_header)
 
@@ -574,10 +716,60 @@ class Reports:
         input('Please press Enter when ready to continue.')
 
     def import_csv():
-        pass
+        print(':Import a CSV with User Assesment Results:')
+        while True:
+            input('Please name your file "import.csv" and place it in the "Reports" Folder.\nPress Enter when you are ready to continue.')
+        
+            try:
+                with open('./reports/import.csv', 'r') as import_csv:
+                    csv_list = import_csv.readlines()
+                    
+            except: 
+                cancel = input('File not found. Please press Enter to try again or "C" to cancel.')
 
-    def export_csv():
-        pass
+                if cancel.lower() == 'c':
+                    return None
+
+                else:
+                    continue
+
+            chk_increment = db_cur.execute('SELECT user_id,assess_id,result_id FROM Assessment_Results').fetchall()
+            csv_list.pop(0)
+            for csv_row in csv_list:
+
+
+                csv_row = csv_row.strip().split(',')
+
+                csv_user = csv_row[0]
+                csv_assess = csv_row[1]
+                db_result = db_result = f'{csv_assess}.{csv_user}.1'
+
+                for db_row in chk_increment:
+                    db_user = db_row[0]
+                    db_assess = db_row[1]
+
+
+                    if str(csv_user) == str(db_user) and str(csv_assess) == str(db_assess):
+
+                        db_result = f'{db_assess}.{db_user}.{int(db_result[-1])+1}'
+
+                csv_row.append(db_result)
+
+                db_cur.execute('INSERT INTO Assessment_Results (user_id, assess_id, score, assess_date, result_id) VALUES (?,?,?,?,?)',(csv_row))
+
+                db_con.commit()
+
+            print('Results uploaded to database successfully\n\n')
+            break
+
+    def export_csv(option):
+        if option == 1:
+            #individual user report
+            Results.view_user_competency(None, True)
+
+        if option == 2:
+            #competency report
+            Results.view_comp(True)
 
     def export_pdf():
         pass
@@ -690,7 +882,6 @@ col_name_choices = {
     'last_login': 'Last Login',
     'failed_logins': 'Failed Logins',
     'date_hired': 'Date Hired',
-    'passed_comps': 'Passed Competencies',
     'user_type': 'User Type',
     'status': 'Status',
 

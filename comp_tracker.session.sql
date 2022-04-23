@@ -1,0 +1,1 @@
+DELETE FROM Assessment_Results WHERE user_id = user_id
