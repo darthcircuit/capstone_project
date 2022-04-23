@@ -129,16 +129,16 @@ def main_menu(logged_user):
                 selected_user = User.select()
 
                 move_cursor(6,'r')
-                new_pw = pwinput.pwinput(prompt=f"Please insert new desired password for {selected_user.first_name}: ", mask ='*')
+                new_pw = pwinput.pwinput(prompt=f"Please insert new desired password for {selected_user.first_name} or leave blank to cancel: ", mask ='*')
 
-                if not new_pw: 
-                    print('Cancelling. ')
+                if not new_pw:
+                    clear() 
+                    print('\nCancelling. ')
                     continue
 
                 User.chpw(selected_user, new_pw)
-                clear()
                 move_cursor(6,'r')
-                input('\n\nPlease press Enter to continue')
+                input('\n\nPassword Changed Successfully. Please press Enter to continue')
 
             #View User,Comp,Assess
             elif choice == 3:
@@ -159,18 +159,13 @@ def main_menu(logged_user):
                     if sub_choice in valid_sub_choice:
                         if sub_choice == 1:
                             clear()
-                           
                             User.view()
 
                         elif sub_choice == 2:
                             clear()
                             Competencies.view()
-                        
+                                             
                         elif sub_choice == 3:
-                            clear()
-                            Assess.view()
-                        
-                        elif sub_choice == 4:
                             clear()
                             break
 
@@ -326,7 +321,7 @@ def main_menu(logged_user):
                 print(f':Import and Export Reports:')
 
                 valid_sub_choices = []
-                reports_table = ['Export Individual User Assessment Report to CSV','Export Competency Assessment Report to CSV','Import CSV with Assessment Result information','Generate template for importing scores from CSV','Export PDF Report','Go Back']
+                reports_table = ['Export Individual User Assessment Report to CSV','Export Competency Assessment Report to CSV','Import CSV with Assessment Result information','Generate template for importing scores from CSV','Go Back']
 
                 while True:
 
@@ -364,14 +359,10 @@ def main_menu(logged_user):
 
                             Reports.gen_template()
 
-
                         if sub_choice == 5:
-                            print('Export PDF Report')
-                            Reports.export_pdf
-
-                        if sub_choice == 6:
                             print('Go Back')
                             break
+            
             #Log Out
             elif choice == 9:
                 clear()

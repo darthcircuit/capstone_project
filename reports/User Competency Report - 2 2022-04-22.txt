@@ -1,3 +1,0 @@
-name,email,comp_name,comp_id,assess_id,average_score
-"Ipson, John",john.i@infoxen.com,Computer Anatomy,1,1.1,2.75
-"Ipson, John",john.i@infoxen.com,Recursion,15,15.1,3.0

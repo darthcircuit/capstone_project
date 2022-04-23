@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 bcrypt = "*"
 pwinput = "*"
-pyinstaller = "*"
 
 [dev-packages]
 pylint = "*"

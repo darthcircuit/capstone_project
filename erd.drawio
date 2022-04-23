@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="OTn4yqPAGSJ8jlr8wdnD" name="Page-1">
-        <mxGraphModel dx="1113" dy="749" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+        <mxGraphModel dx="1166" dy="823" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -374,7 +374,13 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="237" style="edgeStyle=elbowEdgeStyle;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;" parent="1" source="67" target="229" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="720" y="160"/>
+                            <mxPoint x="680" y="240"/>
+                            <mxPoint x="680" y="210"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="67" value="Assessments" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;" parent="1" vertex="1">
                     <mxGeometry x="400" y="200" width="240" height="150" as="geometry"/>
@@ -456,6 +462,9 @@
                         <mxPoint x="670" y="675" as="sourcePoint"/>
                         <mxPoint x="250" y="350" as="targetPoint"/>
                         <Array as="points">
+                            <mxPoint x="660" y="340"/>
+                            <mxPoint x="650" y="400"/>
+                            <mxPoint x="660" y="370"/>
                             <mxPoint x="680" y="390"/>
                             <mxPoint x="690" y="390"/>
                         </Array>
@@ -471,8 +480,8 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="229" value="Assessemnt ID's are caculated based on the ID of the Competency combined with type of assesment they are:&lt;br&gt;&lt;ol&gt;&lt;li style=&quot;&quot;&gt;&lt;span&gt;&amp;nbsp;Manager Evaluation&lt;/span&gt;&lt;br&gt;&lt;/li&gt;&lt;li style=&quot;&quot;&gt;Peer Evaluation&lt;/li&gt;&lt;li style=&quot;&quot;&gt;Practical Skills&lt;/li&gt;&lt;li style=&quot;&quot;&gt;Self Evaluation&lt;/li&gt;&lt;/ol&gt;&lt;br&gt;Overall Competency Score will be rated as a result of all 4 assessments.&lt;br&gt;&lt;br&gt;&lt;ol&gt;&lt;li style=&quot;&quot;&gt;&amp;lt;50% = 0 Competency&lt;/li&gt;&lt;li style=&quot;&quot;&gt;&amp;lt;65% = 1 Competency&lt;/li&gt;&lt;li style=&quot;&quot;&gt;&amp;lt;75% = 2 Competency&lt;/li&gt;&lt;li style=&quot;&quot;&gt;&amp;lt;85% = 3 Competency&lt;/li&gt;&lt;li style=&quot;&quot;&gt;86%+ = 4 Competency&lt;/li&gt;&lt;/ol&gt;" style="shape=note;size=20;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=20;" parent="1" vertex="1">
-                    <mxGeometry x="760" y="40" width="280" height="360" as="geometry"/>
+                <mxCell id="229" value="Assessemnt ID's are caculated based on the ID of the Competency combined with type of assesment they are:&lt;br&gt;&lt;ol&gt;&lt;li&gt;&lt;span&gt;&amp;nbsp;Manager Evaluation&lt;/span&gt;&lt;br&gt;&lt;/li&gt;&lt;li&gt;Peer Evaluation&lt;/li&gt;&lt;li&gt;Practical Skills&lt;/li&gt;&lt;li&gt;Self Evaluation&lt;/li&gt;&lt;/ol&gt;&lt;div&gt;The format is: &quot;comp_id&quot;.&quot;assess_num&quot;&lt;/div&gt;&lt;div&gt;For example, Competency 13 would have 4 Assessments with these ids:&lt;br&gt;&lt;br&gt;&lt;span style=&quot;white-space: pre&quot;&gt;&#9;&lt;/span&gt;14.1, 14.2, 14.3, and 14.4&lt;br&gt;&lt;/div&gt;&lt;br&gt;Overall Competency Score will be rated as a result of all 4 assessments.&lt;br&gt;&lt;br&gt;&lt;ol&gt;&lt;li&gt;&amp;lt;50% = 0 Competency&lt;/li&gt;&lt;li&gt;&amp;lt;65% = 1 Competency&lt;/li&gt;&lt;li&gt;&amp;lt;75% = 2 Competency&lt;/li&gt;&lt;li&gt;&amp;lt;85% = 3 Competency&lt;/li&gt;&lt;li&gt;86%+ = 4 Competency&lt;/li&gt;&lt;/ol&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Consequently, Assessment Result IDs are also generated for us following the same model. They follow this format:&lt;br&gt;&lt;br&gt;&quot;assess_id&quot;.&quot;user_id&quot;.&quot;attempt_num&quot;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;For example, an Assessment Result for user who's personal ID is 5, who has taken the assessment 14.2 for the second time would be:&lt;br&gt;&lt;br&gt;14.2.5.2&lt;/div&gt;" style="shape=note;size=20;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacing=20;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="40" width="280" height="640" as="geometry"/>
                 </mxCell>
                 <mxCell id="235" value="" style="edgeStyle=elbowEdgeStyle;fontSize=12;html=1;endArrow=ERone;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="3" edge="1">
                     <mxGeometry width="100" height="100" relative="1" as="geometry">
@@ -491,6 +500,23 @@
                         <Array as="points">
                             <mxPoint x="350" y="540"/>
                             <mxPoint x="420" y="965"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="238" style="edgeStyle=elbowEdgeStyle;html=1;entryX=-0.007;entryY=0.793;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="51" target="229">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="700" y="520" as="sourcePoint"/>
+                        <mxPoint x="820" y="540" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="680" y="610"/>
+                            <mxPoint x="750" y="540"/>
+                            <mxPoint x="650" y="610"/>
+                            <mxPoint x="670" y="520"/>
+                            <mxPoint x="660" y="610"/>
+                            <mxPoint x="700" y="380"/>
+                            <mxPoint x="650" y="610"/>
+                            <mxPoint x="730" y="200"/>
+                            <mxPoint x="700" y="230"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
